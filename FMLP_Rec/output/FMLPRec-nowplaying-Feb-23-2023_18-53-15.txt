@@ -1,0 +1,8 @@
+Namespace(data_dir='./data/', output_dir='output/', data_name='nowplaying', do_eval=False, load_model=None, model_name='FMLPRec', hidden_size=64, num_hidden_layers=4, num_attention_heads=2, hidden_act='gelu', attention_probs_dropout_prob=0.5, hidden_dropout_prob=0.5, initializer_range=0.02, max_seq_length=50, no_filters=False, lr=0.001, batch_size=512, epochs=2, no_cuda=False, log_freq=1, full_sort=False, patience=10, seed=42, weight_decay=0.0, adam_beta1=0.9, adam_beta2=0.999, gpu_id='0', variance=5, cuda_condition=False, data_file='./data/nowplaying/nowplaying.train.inter', data_file_eval='./data/nowplaying/nowplaying.valid.inter', data_file_test='./data/nowplaying/nowplaying.test.inter', sample_file_eval='./data/nowplaying/nowplaying_valid_sample.txt', sample_file_test='./data/nowplaying/nowplaying_test_sample.txt', item_size=59593, log_file='output/FMLPRec-nowplaying-Feb-23-2023_18-53-15.txt')
+{'epoch': 0, 'rec_loss': '1.0960'}
+{'Epoch': 0, 'HIT@1': '0.1944', 'NDCG@1': '0.1944', 'HIT@5': '0.4083', 'NDCG@5': '0.3054', 'HIT@10': '0.5220', 'NDCG@10': '0.3422', 'MRR': '0.3034'}
+{'epoch': 1, 'rec_loss': '0.7762'}
+{'Epoch': 1, 'HIT@1': '0.2902', 'NDCG@1': '0.2902', 'HIT@5': '0.5564', 'NDCG@5': '0.4297', 'HIT@10': '0.6743', 'NDCG@10': '0.4679', 'MRR': '0.4168'}
+{'Epoch': 0, 'HIT@1': '0.2789', 'NDCG@1': '0.2789', 'HIT@5': '0.5326', 'NDCG@5': '0.4118', 'HIT@10': '0.6476', 'NDCG@10': '0.4490', 'MRR': '0.4010'}
+FMLPRec-nowplaying-Feb-23-2023_18-53-15
+{'Epoch': 0, 'HIT@1': '0.2789', 'NDCG@1': '0.2789', 'HIT@5': '0.5326', 'NDCG@5': '0.4118', 'HIT@10': '0.6476', 'NDCG@10': '0.4490', 'MRR': '0.4010'}
