@@ -161,6 +161,7 @@ class FMLPRecTrainer(Trainer):
                 _, input_ids, answer, neg_answer = batch
                 # Binary cross_entropy
                 sequence_output = self.model(input_ids)
+                # print("sequence_output:",sequence_output.shape)
 
                 loss = self.cross_entropy(sequence_output, answer, neg_answer)
 
@@ -192,8 +193,9 @@ class FMLPRecTrainer(Trainer):
                     batch = tuple(t.to(self.device) for t in batch)
                     user_ids, input_ids, answers, _, neg_answer = batch
                     recommend_output = self.model(input_ids)
+                    print("recommend_output:",recommend_output,recommend_output.shape)
                     recommend_output = recommend_output[:, -1, :]# 推荐的结果
-                    
+                    print("recommend_output:",recommend_output)
                     rating_pred = self.predict_full(recommend_output)
                     rating_pred = rating_pred.cpu().data.numpy().copy()
                     batch_user_index = user_ids.cpu().numpy()
@@ -223,6 +225,7 @@ class FMLPRecTrainer(Trainer):
                     batch = tuple(t.to(self.device) for t in batch)
                     user_ids, input_ids, answers, _, sample_negs = batch
                     recommend_output = self.model(input_ids)
+                    # print("recommend_output:",recommend_output)
                     test_neg_items = torch.cat((answers.unsqueeze(-1), sample_negs), -1)
                     recommend_output = recommend_output[:, -1, :]
 

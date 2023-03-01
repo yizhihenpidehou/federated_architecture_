@@ -146,13 +146,19 @@ def get_user_seqs_and_max_item(data_file):
     lines = lines[1:]
     user_seq = []
     item_set = set()
+    # tarfile = open("user_seq.txt",'w')
     for line in lines:
+
         user, items = line.strip().split('	', 1)
         items = items.split()
+        # l = ' '
+        # tarfile.write(l.join(items)+"\n")
         items = [int(item) for item in items]
         user_seq.append(items)
         item_set = item_set | set(items)
+
     max_item = max(item_set)
+    # tarfile.close()
     return user_seq, max_item
 
 def get_user_seqs_and_sample(data_file, sample_file):
@@ -182,7 +188,6 @@ def get_user_seqs_and_sample(data_file, sample_file):
 def get_user_seqs_and_sample4session_based(data_file, sample_file):
     lines = open(data_file).readlines()
     lines = lines[1:]
-    print("lines:",lines)
     user_seq = []
     item_set = set()
     for line in lines:
@@ -266,7 +271,9 @@ def get_seq_dic(args):
             get_user_seqs_and_sample4session_based(args.data_file_eval, args.sample_file_eval)
         user_seq_test, num_users_test, sample_seq_test = \
             get_user_seqs_and_sample4session_based(args.data_file_test, args.sample_file_test)
-        seq_dic = {'user_seq':user_seq, 
+        # seq_dic = {'user_seq': user_seq,
+        #            'user_seq_test': user_seq_test, 'num_users_test': num_users_test, 'sample_seq_test': sample_seq_test}
+        seq_dic = {'user_seq':user_seq,
                    'user_seq_eval':user_seq_eval, 'num_users_eval':num_users_eval, 'sample_seq_eval':sample_seq_eval,
                    'user_seq_test':user_seq_test, 'num_users_test':num_users_test, 'sample_seq_test':sample_seq_test}
 

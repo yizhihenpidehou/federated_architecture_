@@ -35,7 +35,7 @@ class FMLPRecDataset(Dataset):
         items = self.user_seq[index]
         input_ids = items[:-1]
         answer = items[-1]
-
+        print("answer:",answer)
         seq_set = set(items)
         neg_answer = neg_sample(seq_set, self.args.item_size)
 
@@ -65,8 +65,9 @@ class FMLPRecDataset(Dataset):
                 torch.tensor(answer, dtype=torch.long),
                 torch.tensor(neg_answer, dtype=torch.long),
             )
-
+        print("cur_size:",cur_tensors[1],cur_tensors[2])
         return cur_tensors
+        # return cur_tensors[1],cur_tensors[2]
 
 def neg_sample(item_set, item_size):  # 前闭后闭
     item = random.randint(1, item_size - 1)

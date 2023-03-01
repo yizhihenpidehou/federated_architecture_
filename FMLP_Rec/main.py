@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 
 from models import FMLPRecModel
-from trainers import FMLPRecTrainer
+from FMLP_Rec.trainers import FMLPRecTrainer
 from utils import EarlyStopping, check_path, set_seed, get_local_time, get_seq_dic, get_dataloder, get_rating_matrix
 
 def main():
