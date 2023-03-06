@@ -1,4 +1,5 @@
 import argparse
+import os
 import random
 import sys
 from copy import deepcopy
@@ -6,6 +7,8 @@ from copy import deepcopy
 from fedlab.utils import SerializationTool
 from fedlab.utils.functional import evaluate
 from torch import nn
+from tqdm import tqdm
+
 from trainers import SerialTrainer, SubsetSerialTrainer
 from FMLP_Rec.datasets import FMLPRecDataset
 
@@ -14,7 +17,7 @@ import torch
 from munch import Munch
 
 from FMLP_Rec.models import FMLPRecModel
-from FMLP_Rec.utils import get_dataloder, get_seq_dic, check_path, set_seed
+from FMLP_Rec.utils import get_dataloder, get_seq_dic, check_path, set_seed, get_local_time
 from fedlab.utils.aggregator import Aggregators
 
 
@@ -71,7 +74,7 @@ def main():
     federated_args.partition = 'iid'
     federated_args.preprocess = True
     federated_args.cuda = False
-    federated_args.com_round = 200
+    federated_args.com_round = 10
 
     # FL settings
     num_per_round = int(federated_args.total_client * federated_args.sample_ratio)
@@ -84,7 +87,12 @@ def main():
     seq_dic, max_item = get_seq_dic(args)
     args.item_size = max_item + 1
     train_dataset = FMLPRecDataset(args, seq_dic['user_seq'], data_type='train')
+    test_dataset = FMLPRecDataset(args, seq_dic['user_seq_test'], data_type='test')
 
+    cur_time = get_local_time()
+    args_str = f'{args.model_name}-{args.data_name}-{cur_time}'
+    args.log_file = os.path.join(args.output_dir, args_str + '.txt')
+    print(str(args))
     '''
         处理数据集 
     '''
@@ -102,8 +110,9 @@ def main():
                                            cuda=False,
                                            args={
                                                "batch_size":1024,
-                                               "epochs":10,
-                                               "lr":0.01
+                                               "epochs":args.epochs,
+                                               "lr":0.01,
+                                               "log_file":args.log_file
                                            })
 
     # trainer = FMLPRecTrainer(model, train_dataloader, eval_dataloader,
@@ -121,9 +130,9 @@ def main():
                                               id_list=selection,
                                               aggregate=True)
         SerializationTool.deserialize_model(model,aggregated_parameters)
-        criterion = nn.CrossEntropyLoss()
-        loss,acc  = evaluate(model,criterion,test_dataloader)
-        print("loss:{:.4f}, acc:{:.2f}".format(loss,acc))
+        # criterion = nn.CrossEntropyLoss()
+        res = trainer.c_evaluate(round,test_dataloader)
+        print("loss:",res)
 
 
 

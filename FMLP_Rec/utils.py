@@ -11,7 +11,7 @@ import numpy as np
 
 from scipy.sparse import csr_matrix
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
-from datasets import FMLPRecDataset
+from FMLP_Rec.datasets import FMLPRecDataset
 
 sequential_data_list = ['Beauty','Sports_and_Outdoors','Toys_and_Games','Yelp']
 session_based_data_list = ['nowplaying','retailrocket','tmall','yoochoose']

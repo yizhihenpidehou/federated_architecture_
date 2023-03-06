@@ -53,7 +53,7 @@ class FMLPRecModel(nn.Module):
                                                 output_all_encoded_layers=True,
                                                 )
         sequence_output = item_encoded_layers[-1]
-        print("item_encoded_layers[-1]:",item_encoded_layers[-1].shape)
+        # print("item_encoded_layers[-1]:",item_encoded_layers[-1].shape)
         return sequence_output
 
     def init_weights(self, module):

@@ -193,9 +193,9 @@ class FMLPRecTrainer(Trainer):
                     batch = tuple(t.to(self.device) for t in batch)
                     user_ids, input_ids, answers, _, neg_answer = batch
                     recommend_output = self.model(input_ids)
-                    print("recommend_output:",recommend_output,recommend_output.shape)
+                    # print("recommend_output:",recommend_output,recommend_output.shape)
                     recommend_output = recommend_output[:, -1, :]# 推荐的结果
-                    print("recommend_output:",recommend_output)
+                    # print("recommend_output:",recommend_output)
                     rating_pred = self.predict_full(recommend_output)
                     rating_pred = rating_pred.cpu().data.numpy().copy()
                     batch_user_index = user_ids.cpu().numpy()
@@ -237,3 +237,4 @@ class FMLPRecTrainer(Trainer):
                         pred_list = np.append(pred_list, test_logits, axis=0)
 
                 return self.get_sample_scores(epoch, pred_list)
+

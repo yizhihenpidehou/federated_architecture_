@@ -1,6 +1,5 @@
 # Copyright 2021 Peng Cheng Laboratory (http://www.szpclab.com/) and FedLab Authors (smilelab.group)
-
-
+import numpy as np
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,7 +18,11 @@ from fedlab.utils import SerializationTool, Logger
 from fedlab.utils.dataset import SubsetSampler
 from torch.optim import Adam
 from torch.utils.data import dataloader
-from tqdm import tqdm
+import tqdm
+
+from FMLP_Rec.utils import get_metric
+
+
 #
 # from ...client import SERIAL_TRAINER
 # from ..trainer import ClientTrainer
@@ -136,7 +139,7 @@ class SubsetSerialTrainer(SerialTrainer):
         self.dataset = dataset
         self.data_slices = data_slices  # [0, client_num)
         self.args = args
-
+        # self.args.log_file = "output/log.txt"
         self.optim = Adam(self.model.parameters(), lr=0.001, betas=(0.9,0.99), weight_decay=0.0)
 
     def _get_dataloader(self, client_id):
@@ -191,7 +194,7 @@ class SubsetSerialTrainer(SerialTrainer):
         rec_loss = 0.0
 
         self._model.train()
-        epochs  = 10
+        epochs  =self.args["epochs"]
         for _ in range(epochs):
             for train_data in train_loader:
 
@@ -229,4 +232,62 @@ class SubsetSerialTrainer(SerialTrainer):
 
         return loss
 
+    def predict_sample(self, seq_out, test_neg_sample):
+        # [batch 100 hidden_size]
+        test_item_emb = self.model.item_embeddings(test_neg_sample)
+        # [batch hidden_size]
+        test_logits = torch.bmm(test_item_emb, seq_out.unsqueeze(-1)).squeeze(-1)  # [B 100]
+        return test_logits
+
+    def get_metric(pred_list, topk=10):
+        NDCG = 0.0
+        HIT = 0.0
+        MRR = 0.0
+        # [batch] the answer's rank
+        for rank in pred_list:
+            MRR += 1.0 / (rank + 1.0)
+            if rank < topk:
+                NDCG += 1.0 / np.log2(rank + 2.0)
+                HIT += 1.0
+        return HIT / len(pred_list), NDCG / len(pred_list), MRR / len(pred_list)
+    def get_sample_scores(self, epoch, pred_list):
+        pred_list = (-pred_list).argsort().argsort()[:, 0]
+        HIT_1, NDCG_1, MRR = get_metric(pred_list, 1)
+        HIT_5, NDCG_5, MRR = get_metric(pred_list, 5)
+        HIT_10, NDCG_10, MRR = get_metric(pred_list, 10)
+        post_fix = {
+            "Epoch": epoch,
+            "HIT@1": '{:.4f}'.format(HIT_1), "NDCG@1": '{:.4f}'.format(NDCG_1),
+            "HIT@5": '{:.4f}'.format(HIT_5), "NDCG@5": '{:.4f}'.format(NDCG_5),
+            "HIT@10": '{:.4f}'.format(HIT_10), "NDCG@10": '{:.4f}'.format(NDCG_10),
+            "MRR": '{:.4f}'.format(MRR),
+        }
+        print(post_fix)
+        with open(self.args["log_file"], 'a') as f:
+            f.write(str(post_fix) + '\n')
+        return [HIT_1, NDCG_1, HIT_5, NDCG_5, HIT_10, NDCG_10, MRR], str(post_fix)
+    def c_evaluate(self, epoch, dataloader, full_sort=False, train=True):
+        str_code = "test"
+        rec_data_iter = tqdm.tqdm(enumerate(dataloader),
+                                  desc="Recommendation EP_%s:%d" % (str_code, epoch),
+                                  total=len(dataloader),
+                                  bar_format="{l_bar}{r_bar}")
+
+        for i, batch in rec_data_iter:
+            # 0. batch_data will be sent into the device(GPU or cpu)
+            batch = tuple(t for t in batch)
+            user_ids, input_ids, answers, _, sample_negs = batch
+            recommend_output = self.model(input_ids)
+            # print("recommend_output:",recommend_output)
+            test_neg_items = torch.cat((answers.unsqueeze(-1), sample_negs), -1)
+            recommend_output = recommend_output[:, -1, :]
+
+            test_logits = self.predict_sample(recommend_output, test_neg_items)
+            test_logits = test_logits.cpu().detach().numpy().copy()
+            if i == 0:
+                pred_list = test_logits
+            else:
+                pred_list = np.append(pred_list, test_logits, axis=0)
+
+        return self.get_sample_scores(epoch, pred_list)
 
