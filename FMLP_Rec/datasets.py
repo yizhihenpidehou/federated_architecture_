@@ -1,6 +1,5 @@
 # @Time   : 2022/2/14
 # @Author : Hui Yu
-# @Email  : ishyu@outlook.com
 
 import torch
 import random

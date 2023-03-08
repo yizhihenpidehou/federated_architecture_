@@ -71,26 +71,35 @@ def main():
     federated_args.sample_ratio = 0.7
     federated_args.alpha = 0.5
     federated_args.seed = 42
-    federated_args.partition = 'iid'
     federated_args.preprocess = True
     federated_args.cuda = False
     federated_args.com_round = 10
 
     # FL settings
+    # 每轮参与训练的客户数量
     num_per_round = int(federated_args.total_client * federated_args.sample_ratio)
+    # 设置聚合器
     aggregator = Aggregators.fedavg_aggregate
+    # 参与联邦学习的客户数量
     total_client_num = federated_args.total_client
 
     set_seed(args.seed)
+    # 检查路径是否合法
     check_path(args.output_dir)
+    # 检查cuda是否可用
     args.cuda_condition = torch.cuda.is_available() and not args.no_cuda
+    # 获得训练、验证、测试集对应的用户序列数据 和 最大的 item_id
     seq_dic, max_item = get_seq_dic(args)
     args.item_size = max_item + 1
+    # 设置训练集
     train_dataset = FMLPRecDataset(args, seq_dic['user_seq'], data_type='train')
+    # 设置测试集
     test_dataset = FMLPRecDataset(args, seq_dic['user_seq_test'], data_type='test')
 
     cur_time = get_local_time()
+    # 设置模型名称
     args_str = f'{args.model_name}-{args.data_name}-{cur_time}'
+    # 设置日志存储位置
     args.log_file = os.path.join(args.output_dir, args_str + '.txt')
     print(str(args))
     '''
@@ -99,38 +108,39 @@ def main():
     train_dataloader, eval_dataloader, test_dataloader = get_dataloder(args, seq_dic)
 
     model = FMLPRecModel(args=args)
+    # 将客户与数据对应
     data_indices = []
     for indice in range(0,max_item-1):
         data_indices.append([indice])
     # 本地模型
     local_model = deepcopy(model)
+    #在一个进程中训练多个客户。
     trainer = SubsetSerialTrainer(model = local_model, dataset=train_dataset,
                                            data_slices=data_indices,
                                            aggregator=aggregator,
                                            cuda=False,
                                            args={
-                                               "batch_size":1024,
-                                               "epochs":args.epochs,
-                                               "lr":0.01,
+                                               "batch_size": args.batch_size,
+                                               "epochs": args.epochs,
+                                               "lr": args.lr,
                                                "log_file":args.log_file
                                            })
 
-    # trainer = FMLPRecTrainer(model, train_dataloader, eval_dataloader,
-    #                          test_dataloader, args)
-    # for epoch in range(args.epochs):
-    #     trainer.train(epoch)
-    #     scores, _ = trainer.valid(epoch, full_sort=args.full_sort)
 
 #     train procedure
     to_select = [i for i in range(total_client_num)]
     for round in range(federated_args.com_round):
+        # 获得服务器模型的序列化参数,展开模型每层的参数张量并且串联成一个
         model_parameters = SerializationTool.serialize_model(model)
+        # 随机选取几个客户机进行训练
         selection = random.sample(to_select, num_per_round)
+        # 获得这些客户机训练完成后的聚合的参数
         aggregated_parameters = trainer.train(model_parameters=model_parameters,
                                               id_list=selection,
                                               aggregate=True)
+        # 将聚合的序列化参数更新给服务器模型
         SerializationTool.deserialize_model(model,aggregated_parameters)
-        # criterion = nn.CrossEntropyLoss()
+        # 对当前模型效果进行评估
         res = trainer.c_evaluate(round,test_dataloader)
         print("loss:",res)
 
